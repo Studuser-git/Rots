@@ -1,0 +1,813 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Семейная книга</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya:ital,wght@0,500;0,700;1,500&family=Golos+Text:wght@400;500;600&display=swap">
+<style>
+/* Layout: одна колонка до 1080px — шапка-обложка книги, вкладки-закладки, разделы из «листов» */
+:root {
+  --bg: #eef0ec;
+  --paper: #fbfcfa;
+  --ink: #1d2826;
+  --muted: #5d6a66;
+  --line: #d6dcd7;
+  --accent: #1f5c4f;
+  --accent-soft: #dfece7;
+  --gold: #9a6e22;
+  --inc: #2f7d4f;
+  --exp: #b0453a;
+  --warn-bg: #fbeee0;
+  --warn: #8a4a12;
+  --deceased: #8c9591;
+  --font-display: "Alegreya", Georgia, "Times New Roman", serif;
+  --font-body: "Golos Text", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --r: 10px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111715; --paper: #19211f; --ink: #e4ebe7; --muted: #9aa8a3; --line: #2c3834;
+    --accent: #72c2aa; --accent-soft: #1f3530; --gold: #d8b060; --inc: #6cc38e; --exp: #e57f73;
+    --warn-bg: #3a2a18; --warn: #f0bf85; --deceased: #75807c; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #111715; --paper: #19211f; --ink: #e4ebe7; --muted: #9aa8a3; --line: #2c3834;
+  --accent: #72c2aa; --accent-soft: #1f3530; --gold: #d8b060; --inc: #6cc38e; --exp: #e57f73;
+  --warn-bg: #3a2a18; --warn: #f0bf85; --deceased: #75807c; color-scheme: dark;
+}
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font: 15px/1.55 var(--font-body);
+  padding-inline: 16px; padding-block: 0 48px;
+}
+.wrap { max-width: 1080px; margin: 0 auto; }
+h1, h2, h3 { font-family: var(--font-display); font-weight: 700; line-height: 1.15; text-wrap: balance; margin: 0; }
+h2 { font-size: 1.6rem; }
+h3 { font-size: 1.2rem; }
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+.num { font-variant-numeric: tabular-nums; }
+.muted { color: var(--muted); }
+.eyebrow { font-size: .75rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+
+/* Шапка */
+header.top { padding-block: 36px 8px; display: flex; flex-wrap: wrap; gap: 16px 24px; align-items: flex-end; justify-content: space-between; }
+.title-block { min-width: 0; }
+.title-block h1 { font-size: clamp(2rem, 5vw, 3.1rem); letter-spacing: -.01em; }
+.motto { font-family: var(--font-display); font-style: italic; font-size: 1.15rem; color: var(--muted); margin-top: 4px; }
+.head-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.chip { display: inline-flex; align-items: center; gap: 6px; font-size: .8rem; font-weight: 500; padding: 4px 10px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); }
+.chip.ro { background: var(--warn-bg); color: var(--warn); }
+.chip::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+
+.btn { border: 1px solid var(--line); background: var(--paper); padding: 7px 14px; border-radius: 8px; cursor: pointer; font-size: .88rem; font-weight: 500; }
+.btn:hover { border-color: var(--accent); color: var(--accent); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--paper); }
+.btn.primary:hover { filter: brightness(1.1); color: var(--paper); }
+.btn.danger { color: var(--exp); }
+.btn.danger.armed { background: var(--exp); border-color: var(--exp); color: var(--paper); }
+.btn.small { padding: 4px 10px; font-size: .8rem; }
+.linkbtn { border: 0; background: none; padding: 0; color: var(--accent); cursor: pointer; font-size: .85rem; font-weight: 500; }
+.linkbtn:hover { text-decoration: underline; }
+
+/* Вкладки */
+nav.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin-block: 16px 28px; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; }
+nav.tabs button { border: 0; background: none; padding: 12px 16px 10px; cursor: pointer; font-family: var(--font-display); font-size: 1.15rem; font-weight: 500; color: var(--muted); border-bottom: 3px solid transparent; margin-bottom: -1px; white-space: nowrap; }
+nav.tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--gold); font-weight: 700; }
+
+section.panel { display: grid; gap: 40px; }
+.sec-head { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: baseline; justify-content: space-between; margin-bottom: 16px; }
+.sheet { background: var(--paper); border: 1px solid var(--line); border-radius: var(--r); padding: 20px; min-width: 0; }
+.tag { font-size: .7rem; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; padding: 2px 7px; border-radius: 4px; background: var(--accent-soft); color: var(--accent); white-space: nowrap; }
+.tag.ex { background: transparent; border: 1px dashed var(--muted); color: var(--muted); }
+.tag.late { background: var(--warn-bg); color: var(--warn); }
+
+/* Родословная */
+.gen { display: grid; grid-template-columns: 170px 1fr; gap: 12px 20px; padding-block: 16px; border-top: 1px solid var(--line); }
+.gen:first-of-type { border-top: 0; }
+.gen-label { font-family: var(--font-display); font-size: 1.1rem; font-weight: 700; padding-top: 10px; }
+.gen-label small { display: block; font-family: var(--font-body); font-weight: 400; font-size: .78rem; color: var(--muted); }
+.people { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 10px; }
+.person { display: flex; gap: 12px; align-items: center; text-align: left; border: 1px solid var(--line); background: var(--paper); border-radius: var(--r); padding: 10px 12px; cursor: pointer; min-width: 0; }
+.person:hover { border-color: var(--accent); }
+.avatar { flex: none; width: 42px; height: 42px; border-radius: 50%; display: grid; place-items: center; font-family: var(--font-display); font-weight: 700; font-size: 1rem; background: var(--accent-soft); color: var(--accent); }
+.person.dead .avatar { background: var(--line); color: var(--deceased); }
+.person.dead .p-name { color: var(--muted); }
+.p-name { font-weight: 600; line-height: 1.25; }
+.p-meta { font-size: .8rem; color: var(--muted); }
+.line-mark { font-size: .7rem; color: var(--gold); font-weight: 600; letter-spacing: .03em; }
+
+/* История */
+.story { font-family: var(--font-display); font-size: 1.15rem; line-height: 1.6; max-width: 65ch; }
+.story p { margin: 0 0 .8em; }
+.timeline { list-style: none; margin: 24px 0 0; padding: 0 0 0 0; position: relative; }
+.timeline::before { content: ""; position: absolute; left: 68px; top: 6px; bottom: 6px; width: 2px; background: var(--line); }
+.timeline li { display: grid; grid-template-columns: 56px 1fr; gap: 28px; padding-block: 10px; position: relative; }
+.timeline li::after { content: ""; position: absolute; left: 63px; top: 18px; width: 12px; height: 12px; border-radius: 50%; background: var(--paper); border: 2px solid var(--gold); }
+.t-year { font-family: var(--font-display); font-weight: 700; font-size: 1.15rem; text-align: right; color: var(--gold); }
+.t-body { min-width: 0; max-width: 65ch; }
+.t-title { font-weight: 600; }
+.t-text { color: var(--muted); font-size: .92rem; }
+
+/* Таблицы */
+.tbl-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+th { text-align: left; font-size: .72rem; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 600; padding: 8px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+td { padding: 9px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+tbody tr:last-child td { border-bottom: 0; }
+tr.click { cursor: pointer; }
+tr.click:hover td { background: var(--accent-soft); }
+td.r, th.r { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+tr.dead td:first-child { color: var(--muted); }
+tfoot td { font-weight: 600; border-top: 1px solid var(--line); border-bottom: 0; }
+
+/* Активы */
+.tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.tile { background: var(--paper); border: 1px solid var(--line); border-radius: var(--r); padding: 16px; min-width: 0; }
+.tile .val { font-family: var(--font-display); font-size: 1.75rem; font-weight: 700; margin-top: 6px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.tile .sub { font-size: .8rem; color: var(--muted); }
+.tile.net { background: var(--accent); border-color: var(--accent); color: var(--paper); }
+.tile.net .eyebrow, .tile.net .sub { color: var(--paper); opacity: .85; }
+.pos { color: var(--inc); } .neg { color: var(--exp); }
+.grid2 { display: grid; grid-template-columns: 3fr 2fr; gap: 16px; }
+.chart-box { position: relative; }
+.chart-box svg { width: 100%; height: auto; display: block; }
+.legend { display: flex; gap: 16px; font-size: .82rem; color: var(--muted); margin-top: 6px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.sw { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+.tip { position: absolute; pointer-events: none; background: var(--ink); color: var(--paper); font-size: .8rem; padding: 6px 10px; border-radius: 6px; white-space: nowrap; transform: translate(-50%, -110%); line-height: 1.4; }
+.cats { display: grid; gap: 10px; margin-top: 8px; }
+.cat-row { display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; font-size: .88rem; }
+.cat-bar { grid-column: 1 / -1; height: 8px; border-radius: 4px; background: var(--bg); overflow: hidden; }
+.cat-bar i { display: block; height: 100%; background: var(--exp); border-radius: 4px; }
+.debts { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+.debt dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; margin: 12px 0; font-size: .86rem; }
+.debt dt { color: var(--muted); } .debt dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
+.progress { height: 8px; border-radius: 4px; background: var(--bg); overflow: hidden; }
+.progress i { display: block; height: 100%; background: var(--accent); }
+.month-pick { display: flex; gap: 8px; align-items: center; font-size: .88rem; }
+select, input, textarea { background: var(--paper); border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; }
+.totals { display: flex; flex-wrap: wrap; gap: 8px 24px; font-size: .9rem; margin-top: 12px; }
+.type-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
+
+/* Планы */
+.filters { display: flex; flex-wrap: wrap; gap: 6px; }
+.filters button { border: 1px solid var(--line); background: var(--paper); border-radius: 999px; padding: 5px 12px; font-size: .84rem; cursor: pointer; }
+.filters button[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+.board { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.col { min-width: 0; }
+.col-head { display: flex; justify-content: space-between; align-items: baseline; padding-bottom: 8px; border-bottom: 2px solid var(--line); margin-bottom: 10px; }
+.col-head .n { font-size: .85rem; color: var(--muted); }
+.col[data-s="В работе"] .col-head { border-color: var(--gold); }
+.col[data-s="Готово"] .col-head { border-color: var(--accent); }
+.cards { display: grid; gap: 10px; }
+.plan { background: var(--paper); border: 1px solid var(--line); border-radius: var(--r); padding: 14px; display: grid; gap: 8px; }
+.plan-top { display: flex; justify-content: space-between; gap: 8px; align-items: center; flex-wrap: wrap; }
+.plan-title { font-weight: 600; font-size: 1rem; }
+.plan-note { font-size: .86rem; color: var(--muted); }
+.plan-meta { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: .8rem; color: var(--muted); }
+.empty { color: var(--muted); font-size: .88rem; padding: 12px; border: 1px dashed var(--line); border-radius: var(--r); text-align: center; }
+
+/* Диалог */
+dialog { border: 1px solid var(--line); border-radius: 14px; background: var(--paper); color: var(--ink); padding: 0; width: min(560px, calc(100vw - 32px)); max-height: calc(100vh - 48px); }
+dialog::backdrop { background: rgba(10, 16, 14, .5); }
+.dlg-in { padding: 22px; display: grid; gap: 14px; }
+.dlg-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.x { border: 0; background: none; font-size: 1.5rem; cursor: pointer; color: var(--muted); line-height: 1; padding: 4px 8px; }
+.fields { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.field { display: grid; gap: 4px; min-width: 0; }
+.field.wide { grid-column: 1 / -1; }
+.field label { font-size: .8rem; font-weight: 500; color: var(--muted); }
+.field input, .field select, .field textarea { width: 100%; }
+.field textarea { min-height: 90px; resize: vertical; }
+.field.bad input, .field.bad select { border-color: var(--exp); }
+.err { color: var(--exp); font-size: .78rem; }
+.note-warn { background: var(--warn-bg); color: var(--warn); padding: 10px 12px; border-radius: 8px; font-size: .85rem; }
+.dlg-foot { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.dlg-foot .right { display: flex; gap: 8px; margin-left: auto; }
+.info { display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; margin: 0; font-size: .92rem; }
+.info dt { color: var(--muted); } .info dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.card-hero { display: flex; gap: 14px; align-items: center; }
+.card-hero .avatar { width: 56px; height: 56px; font-size: 1.3rem; }
+footer.foot { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line); font-size: .82rem; color: var(--muted); display: flex; flex-wrap: wrap; gap: 8px 20px; justify-content: space-between; }
+
+@media (max-width: 860px) {
+  .tiles { grid-template-columns: repeat(2, 1fr); }
+  .grid2, .board { grid-template-columns: 1fr; }
+  .gen { grid-template-columns: 1fr; gap: 8px; }
+  .gen-label { padding-top: 0; }
+}
+@media (max-width: 480px) {
+  .tile .val { font-size: 1.35rem; }
+  .fields { grid-template-columns: 1fr; }
+  .sheet { padding: 14px; }
+  .timeline::before { left: 52px; }
+  .timeline li { grid-template-columns: 42px 1fr; gap: 24px; }
+  .timeline li::after { left: 47px; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .btn, .person, .filters button { transition: border-color .15s, background .15s, color .15s; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="title-block">
+      <div class="eyebrow">Семейная книга</div>
+      <h1 id="famName">…</h1>
+      <div class="motto" id="famMotto"></div>
+    </div>
+    <div class="head-actions">
+      <span class="chip" id="rights"></span>
+      <button class="btn small" id="editFamily" type="button">Изменить название</button>
+      <button class="btn small" id="toggleMode" type="button"></button>
+    </div>
+  </header>
+
+  <nav class="tabs" role="tablist" aria-label="Разделы">
+    <button role="tab" id="tab-history" data-tab="history" type="button">История семьи</button>
+    <button role="tab" id="tab-assets" data-tab="assets" type="button">Активы семьи</button>
+    <button role="tab" id="tab-plans" data-tab="plans" type="button">Планы семьи</button>
+  </nav>
+
+  <main>
+    <section class="panel" id="panel-history" role="tabpanel" aria-labelledby="tab-history"></section>
+    <section class="panel" id="panel-assets" role="tabpanel" aria-labelledby="tab-assets"></section>
+    <section class="panel" id="panel-plans" role="tabpanel" aria-labelledby="tab-plans"></section>
+  </main>
+
+  <footer class="foot">
+    <span>Данные хранятся в этом браузере. Записи с меткой «пример» — демонстрационные.</span>
+    <button class="linkbtn" id="resetDemo" type="button">Вернуть демо-данные</button>
+  </footer>
+</div>
+
+<dialog id="dlg" aria-labelledby="dlgTitle"><div class="dlg-in" id="dlgBody"></div></dialog>
+
+<script>
+(function () {
+"use strict";
+
+/* ---------- Справочники ---------- */
+const GEN = { 1: "Прадеды", 2: "Бабушки и дедушки", 3: "Родители", 4: "Дети", 5: "Внуки" };
+const LINES = ["общая", "отцовская", "материнская"];
+const INC_CATS = ["Зарплата", "Подработка", "Проценты и дивиденды", "Пособия", "Подарки", "Прочие доходы"];
+const EXP_CATS = ["Продукты", "Жильё и коммуналка", "Транспорт", "Кредиты", "Образование", "Здоровье", "Одежда", "Отдых и развлечения", "Подарки", "Прочее"];
+const KINDS = ["Недвижимость", "Транспорт", "Вклад", "Наличные", "Инвестиции", "Ценности", "Прочее"];
+const AREAS = ["Развитие семьи", "Обучение детей", "Отдых и развлечения", "Крупные покупки", "Здоровье", "Дом"];
+const STATUSES = ["Идея", "В работе", "Готово"];
+const MONTHS = ["январь", "февраль", "март", "апрель", "май", "июнь", "июль", "август", "сентябрь", "октябрь", "ноябрь", "декабрь"];
+const MONTHS_SHORT = ["янв", "фев", "мар", "апр", "май", "июн", "июл", "авг", "сен", "окт", "ноя", "дек"];
+const MAX_DOCS = 5000;
+const KEY = "family-book-v1";
+
+/* ---------- Демо-данные ---------- */
+function seed() {
+  const ex = (arr) => arr.map((o, i) => Object.assign({ id: "d" + Math.random().toString(36).slice(2, 8) + i, example: true }, o));
+  return {
+    family: {
+      name: "Семья Ротшильдов",
+      motto: "Concordia, Integritas, Industria — согласие, честность, трудолюбие",
+      story: "Род начался во франкфуртском еврейском квартале, где Майер Амшель Ротшильд торговал старинными монетами и векселями. Пятерых сыновей он отправил в пять столиц Европы — Франкфурт, Вену, Лондон, Неаполь и Париж, — и семейные банки действовали как одно целое.\n\nДевиз на гербе и пять стрел в кулаке напоминают о главном правиле основателя: братья сильны, пока держатся вместе. Эта книга продолжает семейную летопись и помогает вести общее хозяйство.",
+      example: true
+    },
+    members: ex([
+      { name: "Майер Амшель Ротшильд", relation: "прадед", generation: 1, line: "общая", birthDate: "1744-02-23", deathDate: "1812-09-19", birthPlace: "Франкфурт-на-Майне", occupation: "Банкир, основатель дома" },
+      { name: "Гутле Шнаппер", relation: "прабабушка", generation: 1, line: "общая", birthDate: "1753-08-23", deathDate: "1849-05-07", birthPlace: "Франкфурт-на-Майне", notes: "Пережила мужа на 37 лет и до конца жизни оставалась в доме на Юденгассе." },
+      { name: "Натан Майер Ротшильд", relation: "дедушка", generation: 2, line: "отцовская", birthDate: "1777-09-16", deathDate: "1836-07-28", birthPlace: "Франкфурт-на-Майне", occupation: "Основатель N M Rothschild & Sons, Лондон" },
+      { name: "Ханна Коэн", relation: "бабушка", generation: 2, line: "отцовская", birthDate: "1783", deathDate: "1850", birthPlace: "Лондон" },
+      { name: "Карл Майер фон Ротшильд", relation: "дедушка", generation: 2, line: "материнская", birthDate: "1788-04-24", deathDate: "1855-03-10", birthPlace: "Франкфурт-на-Майне", occupation: "Глава неаполитанского банка" },
+      { name: "Адельгейд Герц", relation: "бабушка", generation: 2, line: "материнская", birthDate: "1800", deathDate: "1853" },
+      { name: "Джеймс Майер де Ротшильд", relation: "двоюродный дедушка", generation: 2, line: "общая", birthDate: "1792-05-15", deathDate: "1868-11-15", birthPlace: "Франкфурт-на-Майне", occupation: "Основатель de Rothschild Frères, Париж" },
+      { name: "Лайонел де Ротшильд", relation: "отец", generation: 3, line: "отцовская", birthDate: "1808-11-22", deathDate: "1879-06-03", birthPlace: "Лондон", occupation: "Банкир, член парламента" },
+      { name: "Шарлотта фон Ротшильд", relation: "мать", generation: 3, line: "материнская", birthDate: "1819-06-13", deathDate: "1884-03-13", birthPlace: "Франкфурт-на-Майне", occupation: "Меценат" },
+      { name: "Альфонс де Ротшильд", relation: "двоюродный дядя", generation: 3, line: "общая", birthDate: "1827-02-01", deathDate: "1905-05-26", birthPlace: "Париж", occupation: "Банкир, регент Банка Франции" },
+      { name: "Натаниэль (Натти) Ротшильд", relation: "я", generation: 4, line: "общая", birthDate: "1840-11-08", deathDate: "1915-03-31", birthPlace: "Лондон", occupation: "Банкир, первый барон Ротшильд" },
+      { name: "Леопольд де Ротшильд", relation: "брат", generation: 4, line: "общая", birthDate: "1845-11-22", deathDate: "1917-05-29", birthPlace: "Лондон", occupation: "Банкир, коннозаводчик" }
+    ]),
+    events: ex([
+      { year: 1769, title: "Придворный агент", text: "Майер Амшель получает звание придворного поставщика ландграфа Гессен-Ганау." },
+      { year: 1798, title: "Натан уезжает в Англию", text: "Третий сын начинает с торговли тканями в Манчестере, затем переезжает в Лондон." },
+      { year: 1810, title: "Основан дом «Майер Амшель Ротшильд и сыновья»", text: "Отец делает сыновей партнёрами семейного дела." },
+      { year: 1817, title: "Парижский банк", text: "Джеймс открывает de Rothschild Frères." },
+      { year: 1822, title: "Баронский титул", text: "Император Австрии жалует пятерым братьям баронское достоинство." },
+      { year: 1858, title: "Лайонел в парламенте", text: "Первый иудей, занявший место в британской Палате общин." },
+      { year: 1875, title: "Акции Суэцкого канала", text: "Лондонский дом за несколько дней ссужает правительству Дизраэли 4 млн фунтов." }
+    ]),
+    assets: ex([
+      { name: "Квартира на Абая, 4 комнаты", kind: "Недвижимость", value: 85000000, owner: "Лайонел и Шарлотта" },
+      { name: "Депозит «Семейный»", kind: "Вклад", value: 12000000, owner: "Шарлотта", note: "Ставка 14,5 %, капитализация ежемесячно" },
+      { name: "Toyota Camry, 2022", kind: "Транспорт", value: 9500000, owner: "Лайонел" },
+      { name: "Коллекция старинных монет", kind: "Ценности", value: 3200000, owner: "Семья", note: "Начата прадедом" }
+    ]),
+    debts: ex([
+      { name: "Ипотека за квартиру", lender: "Отбасы банк", total: 40000000, balance: 28500000, monthly: 420000, rate: 7, endDate: "2034-05-01" },
+      { name: "Автокредит", lender: "Халык банк", total: 6000000, balance: 2100000, monthly: 210000, rate: 14, endDate: "2027-06-01" }
+    ]),
+    tx: ex([
+      ["2026-04-05", "Доход", "Зарплата", 850000, "Лайонел"],
+      ["2026-04-10", "Расход", "Жильё и коммуналка", 95000, "Шарлотта"],
+      ["2026-04-15", "Расход", "Кредиты", 630000, "Лайонел", "Ипотека и автокредит"],
+      ["2026-04-20", "Расход", "Продукты", 180000, "Шарлотта"],
+      ["2026-05-05", "Доход", "Зарплата", 850000, "Лайонел"],
+      ["2026-05-12", "Доход", "Подработка", 150000, "Шарлотта", "Перевод статьи"],
+      ["2026-05-15", "Расход", "Кредиты", 630000, "Лайонел"],
+      ["2026-05-22", "Расход", "Отдых и развлечения", 120000, "Семья", "Выходные в Бурабае"],
+      ["2026-06-05", "Доход", "Зарплата", 850000, "Лайонел"],
+      ["2026-06-15", "Расход", "Кредиты", 630000, "Лайонел"],
+      ["2026-06-18", "Расход", "Продукты", 175000, "Шарлотта"],
+      ["2026-06-25", "Расход", "Образование", 90000, "Натти", "Летняя школа"],
+      ["2026-07-05", "Доход", "Зарплата", 850000, "Лайонел"],
+      ["2026-07-15", "Расход", "Кредиты", 630000, "Лайонел"],
+      ["2026-07-20", "Расход", "Отдых и развлечения", 260000, "Семья", "Иссык-Куль"],
+      ["2026-08-05", "Доход", "Зарплата", 850000, "Лайонел"],
+      ["2026-08-15", "Расход", "Кредиты", 630000, "Лайонел"],
+      ["2026-08-28", "Расход", "Одежда", 140000, "Натти, Леопольд", "К школе"],
+      ["2026-09-05", "Доход", "Зарплата", 850000, "Лайонел"],
+      ["2026-09-10", "Доход", "Проценты и дивиденды", 96000, "Шарлотта", "Проценты по депозиту"],
+      ["2026-09-12", "Расход", "Жильё и коммуналка", 98000, "Шарлотта"],
+      ["2026-09-15", "Расход", "Кредиты", 630000, "Лайонел"],
+      ["2026-09-20", "Расход", "Продукты", 190000, "Шарлотта"]
+    ].map(([date, type, category, amount, who, note]) => ({ date, type, category, amount, who, note: note || "" }))),
+    plans: ex([
+      { title: "Оцифровать семейный архив", area: "Развитие семьи", status: "В работе", who: "Все", due: "2026-12-31", budget: 150000, progress: 40, note: "Письма братьев 1810–1850-х, сканировать и подписать." },
+      { title: "Курсы английского", area: "Обучение детей", status: "В работе", who: "Натти", due: "2027-05-31", budget: 480000, progress: 25, note: "Два раза в неделю, цель — уровень B2." },
+      { title: "Поездка во Франкфурт", area: "Отдых и развлечения", status: "Идея", who: "Вся семья", due: "2027-07-15", budget: 1800000, progress: 0, note: "Посмотреть место, где начиналась семья." },
+      { title: "Новый семейный автомобиль", area: "Крупные покупки", status: "Идея", who: "Лайонел", due: "2027-09-01", budget: 12000000, progress: 10, note: "После закрытия автокредита." },
+      { title: "Ремонт кухни", area: "Дом", status: "В работе", who: "Шарлотта", due: "2026-09-01", budget: 2500000, progress: 60, note: "Осталось заменить столешницу и свет." },
+      { title: "Ежегодный медосмотр", area: "Здоровье", status: "Готово", who: "Вся семья", due: "2026-06-30", budget: 220000, progress: 100 }
+    ])
+  };
+}
+
+/* ---------- Хранилище ---------- */
+function load() {
+  try { const raw = localStorage.getItem(KEY); if (raw) return JSON.parse(raw); } catch (e) {}
+  return seed();
+}
+let db = load();
+function save() { try { localStorage.setItem(KEY, JSON.stringify(db)); } catch (e) {} }
+function pref(k, v) {
+  try { if (v === undefined) return localStorage.getItem("fb-" + k); localStorage.setItem("fb-" + k, v); } catch (e) { return null; }
+}
+let canEdit = pref("mode") !== "view";
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+const docCount = () => ["members", "events", "tx", "assets", "debts", "plans"].reduce((s, k) => s + db[k].length, 1);
+
+/* ---------- Утилиты ---------- */
+const $ = (s, r = document) => r.querySelector(s);
+const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const nbsp = (s) => s.replace(/ /g, " ");
+const money = (n) => nbsp(Math.round(n || 0).toLocaleString("ru-RU")) + " ₸";
+function compact(n) {
+  const a = Math.abs(n), sign = n < 0 ? "−" : "";
+  const f = (v) => v.toLocaleString("ru-RU", { maximumFractionDigits: v < 10 ? 1 : 0 });
+  if (a >= 1e9) return sign + f(a / 1e9) + " млрд ₸";
+  if (a >= 1e6) return sign + f(a / 1e6) + " млн ₸";
+  if (a >= 1e4) return sign + f(a / 1e3) + " тыс. ₸";
+  return sign + money(a);
+}
+const initials = (name) => name.replace(/\(.*?\)/g, "").split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join("").toUpperCase();
+function parseD(s) {
+  if (!s) return null;
+  const m = String(s).match(/^(\d{4})(?:-(\d{2})-(\d{2}))?$/);
+  if (!m) return null;
+  return { y: +m[1], mo: m[2] ? +m[2] : null, d: m[3] ? +m[3] : null };
+}
+function fmtD(s) {
+  const p = parseD(s); if (!p) return s || "";
+  return p.mo ? String(p.d).padStart(2, "0") + "." + String(p.mo).padStart(2, "0") + "." + p.y : String(p.y);
+}
+function years(from, to) {
+  let a = to.y - from.y;
+  if (from.mo && to.mo && (to.mo < from.mo || (to.mo === from.mo && to.d < from.d))) a--;
+  return a;
+}
+function plural(n, one, few, many) {
+  const m10 = n % 10, m100 = n % 100;
+  if (m10 === 1 && m100 !== 11) return one;
+  if (m10 >= 2 && m10 <= 4 && (m100 < 10 || m100 >= 20)) return few;
+  return many;
+}
+const TODAY = new Date();
+const todayP = { y: TODAY.getFullYear(), mo: TODAY.getMonth() + 1, d: TODAY.getDate() };
+function lifeText(m) {
+  const b = parseD(m.birthDate), d = parseD(m.deathDate);
+  if (!b) return d ? "† " + d.y : "";
+  if (d) { const a = years(b, d); return b.y + "–" + d.y + " · " + a + " " + plural(a, "год", "года", "лет"); }
+  const a = years(b, todayP); return a + " " + plural(a, "год", "года", "лет");
+}
+const ageOnly = (m) => { const b = parseD(m.birthDate); if (!b) return ""; const d = parseD(m.deathDate); const a = years(b, d || todayP); return d ? "† в " + a : String(a); };
+const ym = (s) => s.slice(0, 7);
+const ymLabel = (k) => MONTHS[+k.slice(5, 7) - 1] + " " + k.slice(0, 4);
+function shiftYm(k, n) { const d = new Date(+k.slice(0, 4), +k.slice(5, 7) - 1 + n, 1); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0"); }
+const exTag = (o) => (o.example ? ' <span class="tag ex">пример</span>' : "");
+const editBtn = (col, id, label = "Изменить") => canEdit ? `<button class="linkbtn" type="button" data-edit="${col}" data-id="${esc(id)}">${label}</button>` : "";
+const addBtn = (col, label) => canEdit ? `<button class="btn small" type="button" data-add="${col}">+ ${label}</button>` : "";
+
+/* ---------- Состояние ---------- */
+const TABS = ["history", "assets", "plans"];
+let tab = TABS.includes(location.hash.slice(1)) ? location.hash.slice(1) : (TABS.includes(pref("tab")) ? pref("tab") : "history");
+let month = null;
+let area = "all";
+
+/* ---------- Шапка ---------- */
+function renderHeader() {
+  $("#famName").textContent = db.family.name || "Семья";
+  $("#famMotto").textContent = db.family.motto || "";
+  $("#famMotto").hidden = !db.family.motto;
+  document.title = (db.family.name || "Семейная книга");
+  const r = $("#rights");
+  r.textContent = canEdit ? "Вы можете вносить изменения" : "Только просмотр";
+  r.classList.toggle("ro", !canEdit);
+  $("#editFamily").hidden = !canEdit;
+  $("#toggleMode").textContent = canEdit ? "Смотреть как ребёнок" : "Вернуть редактирование";
+  document.querySelectorAll("nav.tabs button").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.tab === tab)));
+  TABS.forEach((t) => ($("#panel-" + t).hidden = t !== tab));
+}
+
+/* ---------- История ---------- */
+function renderHistory() {
+  const lineIdx = (l) => { const i = LINES.indexOf(l); return i < 0 ? 9 : i; };
+  const byGen = {};
+  db.members.forEach((m) => (byGen[m.generation || 3] = byGen[m.generation || 3] || []).push(m));
+  let gens = "";
+  Object.keys(GEN).forEach((g) => {
+    const list = (byGen[g] || []).slice().sort((a, b) => lineIdx(a.line) - lineIdx(b.line) || String(a.birthDate || "").localeCompare(String(b.birthDate || "")));
+    if (!list.length) return;
+    gens += `<div class="gen"><div class="gen-label">${GEN[g]}<small>${list.length} ${plural(list.length, "человек", "человека", "человек")}</small></div><div class="people">` +
+      list.map((m) => `<button type="button" class="person${m.deathDate ? " dead" : ""}" data-person="${esc(m.id)}">
+        <span class="avatar" aria-hidden="true">${esc(initials(m.name))}</span>
+        <span style="min-width:0"><span class="p-name">${esc(m.name)}</span><br>
+        <span class="p-meta">${esc(m.relation || "")}${m.relation ? " · " : ""}<span class="num">${esc(lifeText(m))}</span></span>
+        ${m.line && m.line !== "общая" ? `<br><span class="line-mark">линия ${esc(m.line === "отцовская" ? "отца" : "матери")}</span>` : ""}</span>
+      </button>`).join("") + `</div></div>`;
+  });
+  if (!gens) gens = `<p class="empty">В родословной пока никого нет. ${canEdit ? "Добавьте первого человека." : ""}</p>`;
+
+  const story = (db.family.story || "").split(/\n\s*\n/).filter(Boolean).map((p) => `<p>${esc(p)}</p>`).join("");
+  const events = db.events.slice().sort((a, b) => a.year - b.year);
+
+  const rows = db.members.slice().sort((a, b) => (a.generation - b.generation) || String(a.birthDate || "").localeCompare(String(b.birthDate || "")));
+
+  $("#panel-history").innerHTML = `
+    <div>
+      <div class="sec-head"><h2>Родословная</h2>${addBtn("members", "Добавить человека")}</div>
+      <div class="sheet">${gens}</div>
+    </div>
+    <div>
+      <div class="sec-head"><h2>История</h2><div style="display:flex;gap:12px;align-items:center">${canEdit ? '<button class="linkbtn" type="button" data-edit="family" data-id="main">Изменить вступление</button>' : ""}${addBtn("events", "Добавить событие")}</div></div>
+      <div class="sheet">
+        <div class="story">${story || '<p class="muted">Вступление о семье ещё не написано.</p>'}</div>
+        ${events.length ? `<ol class="timeline">${events.map((e) => `<li><div class="t-year num">${esc(e.year)}</div><div class="t-body"><div class="t-title">${esc(e.title)}${exTag(e)}</div>${e.text ? `<div class="t-text">${esc(e.text)}</div>` : ""}${editBtn("events", e.id)}</div></li>`).join("")}</ol>` : '<p class="empty">Событий в хронике пока нет.</p>'}
+      </div>
+    </div>
+    <div>
+      <div class="sec-head"><h2>Состав семьи</h2><span class="muted" style="font-size:.85rem">Нажмите на строку, чтобы открыть карточку</span></div>
+      <div class="sheet tbl-wrap"><table>
+        <thead><tr><th>Имя</th><th>Кем приходится</th><th>Дата рождения</th><th class="r">Возраст</th><th>Занятие</th><th>Контакты</th></tr></thead>
+        <tbody>${rows.map((m) => `<tr class="click${m.deathDate ? " dead" : ""}" tabindex="0" data-person="${esc(m.id)}"><td>${esc(m.name)}${exTag(m)}</td><td>${esc(m.relation || "")}</td><td class="num">${esc(fmtD(m.birthDate))}</td><td class="r">${esc(ageOnly(m))}</td><td>${esc(m.occupation || "")}</td><td>${[m.phone, m.email].filter(Boolean).map(esc).join("<br>") || '<span class="muted">—</span>'}</td></tr>`).join("")}</tbody>
+      </table></div>
+    </div>`;
+}
+
+/* ---------- Активы ---------- */
+function monthStats(k) {
+  const s = { inc: 0, exp: 0, cats: {} };
+  db.tx.forEach((t) => {
+    if (ym(t.date) !== k) return;
+    if (t.type === "Доход") s.inc += +t.amount; else { s.exp += +t.amount; s.cats[t.category] = (s.cats[t.category] || 0) + +t.amount; }
+  });
+  return s;
+}
+function niceStep(raw) {
+  const p = Math.pow(10, Math.floor(Math.log10(raw || 1)));
+  const n = raw / p;
+  return (n <= 1 ? 1 : n <= 2 ? 2 : n <= 2.5 ? 2.5 : n <= 5 ? 5 : 10) * p;
+}
+function chart(endK) {
+  const ks = []; for (let i = 5; i >= 0; i--) ks.push(shiftYm(endK, -i));
+  const data = ks.map((k) => Object.assign({ k }, monthStats(k)));
+  const max = Math.max(1, ...data.map((d) => Math.max(d.inc, d.exp)));
+  const step = niceStep(max / 4), top = Math.ceil(max / step) * step;
+  const W = 640, H = 260, L = 64, R = 8, T = 14, B = 34;
+  const cw = (W - L - R) / 6, bw = Math.min(26, cw * 0.3);
+  const y = (v) => T + (H - T - B) * (1 - v / top);
+  let g = "";
+  for (let v = 0; v <= top + 1e-6; v += step) {
+    g += `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)" stroke-width="1"/>`;
+    g += `<text x="${L - 8}" y="${y(v) + 4}" text-anchor="end" font-size="11" fill="var(--muted)">${esc(compact(v).replace(/ ₸/, ""))}</text>`;
+  }
+  data.forEach((d, i) => {
+    const cx = L + cw * i + cw / 2;
+    const sel = d.k === endK;
+    g += `<rect x="${cx - bw - 2}" y="${y(d.inc)}" width="${bw}" height="${Math.max(0, y(0) - y(d.inc))}" rx="3" fill="var(--inc)"/>`;
+    g += `<rect x="${cx + 2}" y="${y(d.exp)}" width="${bw}" height="${Math.max(0, y(0) - y(d.exp))}" rx="3" fill="var(--exp)"/>`;
+    g += `<text x="${cx}" y="${H - 12}" text-anchor="middle" font-size="12" fill="${sel ? "var(--ink)" : "var(--muted)"}" font-weight="${sel ? 700 : 400}">${MONTHS_SHORT[+d.k.slice(5, 7) - 1]}</text>`;
+    g += `<rect class="hit" x="${L + cw * i}" y="${T}" width="${cw}" height="${H - T - B}" fill="transparent" data-i="${i}"/>`;
+  });
+  return { svg: `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Доходы и расходы за шесть месяцев">${g}</svg>`, data, W, cw, L };
+}
+function renderAssets() {
+  const months = [...new Set(db.tx.map((t) => ym(t.date)))].sort();
+  const nowK = todayP.y + "-" + String(todayP.mo).padStart(2, "0");
+  if (!months.includes(nowK)) months.push(nowK);
+  months.sort();
+  if (!month || !months.includes(month)) month = months.filter((k) => db.tx.some((t) => ym(t.date) === k)).pop() || nowK;
+
+  const assetsTotal = db.assets.reduce((s, a) => s + +a.value, 0);
+  const debtBal = db.debts.reduce((s, d) => s + +d.balance, 0);
+  const net = assetsTotal - debtBal;
+  const ms = monthStats(month);
+  const bal = ms.inc - ms.exp;
+  const c = chart(month);
+  const cats = Object.entries(ms.cats).sort((a, b) => b[1] - a[1]);
+  const txs = db.tx.filter((t) => ym(t.date) === month).sort((a, b) => a.date.localeCompare(b.date));
+  const assets = db.assets.slice().sort((a, b) => b.value - a.value);
+  const monthly = db.debts.reduce((s, d) => s + (+d.monthly || 0), 0);
+
+  $("#panel-assets").innerHTML = `
+    <div class="tiles">
+      <div class="tile"><div class="eyebrow">Имущество и сбережения</div><div class="val">${compact(assetsTotal)}</div><div class="sub">${db.assets.length} ${plural(db.assets.length, "позиция", "позиции", "позиций")}</div></div>
+      <div class="tile"><div class="eyebrow">Долги и кредиты</div><div class="val neg">${compact(debtBal)}</div><div class="sub">остаток по ${db.debts.length} ${plural(db.debts.length, "кредиту", "кредитам", "кредитам")}</div></div>
+      <div class="tile net"><div class="eyebrow">Чистый капитал</div><div class="val">${compact(net)}</div><div class="sub">активы − остаток долгов</div></div>
+      <div class="tile"><div class="eyebrow">Баланс · ${ymLabel(month)}</div><div class="val ${bal >= 0 ? "pos" : "neg"}">${bal >= 0 ? "+" : "−"}${compact(Math.abs(bal))}</div><div class="sub">доходы ${compact(ms.inc)} · расходы ${compact(ms.exp)}</div></div>
+    </div>
+
+    <div class="grid2">
+      <div class="sheet">
+        <h3>Доходы и расходы за полгода</h3>
+        <div class="chart-box" id="chartBox">${c.svg}<div class="tip" id="tip" hidden></div></div>
+        <div class="legend"><span><i class="sw" style="background:var(--inc)"></i>Доходы</span><span><i class="sw" style="background:var(--exp)"></i>Расходы</span></div>
+      </div>
+      <div class="sheet">
+        <h3>Куда ушли деньги</h3>
+        <div class="muted" style="font-size:.85rem">${ymLabel(month)} · всего ${money(ms.exp)}</div>
+        ${cats.length ? `<div class="cats">${cats.map(([k, v]) => { const p = ms.exp ? v / ms.exp * 100 : 0; return `<div class="cat-row"><span>${esc(k)}</span><span class="num">${money(v)} · ${Math.round(p)}%</span><div class="cat-bar"><i style="width:${p.toFixed(1)}%"></i></div></div>`; }).join("")}</div>` : '<p class="empty">В этом месяце расходов нет.</p>'}
+      </div>
+    </div>
+
+    <div>
+      <div class="sec-head"><h2>Журнал операций</h2>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+          <label class="month-pick" for="monthSel">Месяц <select id="monthSel">${months.slice().reverse().map((k) => `<option value="${k}"${k === month ? " selected" : ""}>${ymLabel(k)}</option>`).join("")}</select></label>
+          ${addBtn("tx", "Добавить операцию")}
+        </div>
+      </div>
+      <div class="sheet">
+        ${txs.length ? `<div class="tbl-wrap"><table>
+          <thead><tr><th>Дата</th><th>Категория</th><th>Кто</th><th>Комментарий</th><th class="r">Сумма</th>${canEdit ? "<th></th>" : ""}</tr></thead>
+          <tbody>${txs.map((t) => `<tr><td class="num">${fmtD(t.date)}</td><td><span class="type-dot" style="background:var(${t.type === "Доход" ? "--inc" : "--exp"})" aria-hidden="true"></span>${esc(t.category)} <span class="muted" style="font-size:.78rem">${t.type === "Доход" ? "доход" : "расход"}</span>${exTag(t)}</td><td>${esc(t.who || "")}</td><td class="muted">${esc(t.note || "")}</td><td class="r ${t.type === "Доход" ? "pos" : "neg"}">${t.type === "Доход" ? "+" : "−"}${money(t.amount)}</td>${canEdit ? `<td class="r">${editBtn("tx", t.id)}</td>` : ""}</tr>`).join("")}</tbody>
+        </table></div>` : `<p class="empty">За ${ymLabel(month)} операций нет.</p>`}
+        <div class="totals num"><span>Доходы: <b class="pos">${money(ms.inc)}</b></span><span>Расходы: <b class="neg">${money(ms.exp)}</b></span><span>Баланс: <b class="${bal >= 0 ? "pos" : "neg"}">${bal >= 0 ? "+" : "−"}${money(Math.abs(bal))}</b></span></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="sec-head"><h2>Имущество и сбережения</h2>${addBtn("assets", "Добавить")}</div>
+      <div class="sheet tbl-wrap"><table>
+        <thead><tr><th>Название</th><th>Вид</th><th>Владелец</th><th>Примечание</th><th class="r">Оценка</th>${canEdit ? "<th></th>" : ""}</tr></thead>
+        <tbody>${assets.map((a) => `<tr><td>${esc(a.name)}${exTag(a)}</td><td>${esc(a.kind)}</td><td>${esc(a.owner || "")}</td><td class="muted">${esc(a.note || "")}</td><td class="r">${money(a.value)}</td>${canEdit ? `<td class="r">${editBtn("assets", a.id)}</td>` : ""}</tr>`).join("") || `<tr><td colspan="6" class="muted">Имущество пока не внесено.</td></tr>`}</tbody>
+        ${assets.length ? `<tfoot><tr><td colspan="4">Итого</td><td class="r">${money(assetsTotal)}</td>${canEdit ? "<td></td>" : ""}</tr></tfoot>` : ""}
+      </table></div>
+    </div>
+
+    <div>
+      <div class="sec-head"><h2>Долги и кредиты</h2>${addBtn("debts", "Добавить")}</div>
+      <div class="debts">${db.debts.map((d) => { const paid = d.total ? Math.max(0, Math.min(100, (1 - d.balance / d.total) * 100)) : 0; return `<div class="sheet debt">
+        <div class="plan-top"><h3>${esc(d.name)}</h3>${exTag(d)}</div>
+        <div class="muted" style="font-size:.85rem">${esc(d.lender || "")}</div>
+        <div class="tile" style="border:0;padding:8px 0 0;background:none"><div class="eyebrow">Остаток</div><div class="val neg">${money(d.balance)}</div></div>
+        <dl><dt>Сумма кредита</dt><dd>${money(d.total)}</dd>${d.rate ? `<dt>Ставка</dt><dd>${esc(d.rate)} %</dd>` : ""}${d.monthly ? `<dt>Платёж в месяц</dt><dd>${money(d.monthly)}</dd>` : ""}${d.endDate ? `<dt>Погашение</dt><dd>${fmtD(d.endDate)}</dd>` : ""}</dl>
+        <div class="progress" role="progressbar" aria-valuenow="${Math.round(paid)}" aria-valuemin="0" aria-valuemax="100"><i style="width:${paid.toFixed(1)}%"></i></div>
+        <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:.82rem"><span class="muted">Выплачено ${Math.round(paid)}%</span>${editBtn("debts", d.id)}</div>
+      </div>`; }).join("") || '<p class="empty">Долгов нет.</p>'}</div>
+      ${db.debts.length ? `<p class="num" style="margin:12px 0 0">Ежемесячные платежи по кредитам: <b>${money(monthly)}</b></p>` : ""}
+    </div>`;
+
+  // подсказка на графике
+  const box = $("#chartBox"), tip = $("#tip"), svg = box.querySelector("svg");
+  box.querySelectorAll(".hit").forEach((r) => {
+    const show = () => {
+      const d = c.data[+r.dataset.i];
+      tip.innerHTML = `<b>${ymLabel(d.k)}</b><br>Доходы: ${money(d.inc)}<br>Расходы: ${money(d.exp)}<br>Баланс: ${d.inc - d.exp >= 0 ? "+" : "−"}${money(Math.abs(d.inc - d.exp))}`;
+      const scale = svg.clientWidth / c.W;
+      let x = (c.L + c.cw * (+r.dataset.i + 0.5)) * scale;
+      x = Math.max(80, Math.min(svg.clientWidth - 80, x));
+      tip.style.left = x + "px"; tip.style.top = "40px"; tip.hidden = false;
+      r.setAttribute("fill", "var(--accent-soft)"); r.setAttribute("fill-opacity", ".5");
+    };
+    const hide = () => { tip.hidden = true; r.setAttribute("fill", "transparent"); };
+    r.addEventListener("mouseenter", show); r.addEventListener("mouseleave", hide);
+    r.addEventListener("click", () => { month = c.data[+r.dataset.i].k; render(); });
+  });
+  $("#monthSel").addEventListener("change", (e) => { month = e.target.value; render(); });
+}
+
+/* ---------- Планы ---------- */
+function renderPlans() {
+  const list = db.plans.filter((p) => area === "all" || p.area === area);
+  const open = list.filter((p) => p.status !== "Готово").reduce((s, p) => s + (+p.budget || 0), 0);
+  const today = TODAY.toISOString().slice(0, 10);
+  $("#panel-plans").innerHTML = `
+    <div>
+      <div class="sec-head"><h2>Планы семьи</h2>${addBtn("plans", "Добавить план")}</div>
+      <div class="filters" role="group" aria-label="Направление">
+        ${["all", ...AREAS].map((a) => `<button type="button" data-area="${esc(a)}" aria-pressed="${a === area}">${a === "all" ? "Все направления" : esc(a)}</button>`).join("")}
+      </div>
+      <p style="margin:16px 0 20px">Бюджет незавершённых планов${area === "all" ? "" : " · " + esc(area)}: <b class="num">${money(open)}</b></p>
+      <div class="board">${STATUSES.map((s) => {
+        const items = list.filter((p) => p.status === s).sort((a, b) => String(a.due || "9").localeCompare(String(b.due || "9")));
+        return `<div class="col" data-s="${s}"><div class="col-head"><h3>${s}</h3><span class="n num">${items.length}</span></div><div class="cards">${items.map((p) => {
+          const late = p.status !== "Готово" && p.due && p.due < today;
+          const pr = Math.max(0, Math.min(100, +p.progress || 0));
+          return `<article class="plan">
+            <div class="plan-top"><span class="tag">${esc(p.area)}</span><span>${late ? '<span class="tag late">просрочено</span> ' : ""}${exTag(p)}</span></div>
+            <div class="plan-title">${esc(p.title)}</div>
+            ${p.note ? `<div class="plan-note">${esc(p.note)}</div>` : ""}
+            <div class="plan-meta">${p.who ? `<span>Для кого: ${esc(p.who)}</span>` : ""}${p.due ? `<span class="num">Срок: ${fmtD(p.due)}</span>` : ""}${p.budget ? `<span class="num">Бюджет: ${money(p.budget)}</span>` : ""}</div>
+            <div class="progress" role="progressbar" aria-valuenow="${pr}" aria-valuemin="0" aria-valuemax="100" aria-label="Готовность"><i style="width:${pr}%"></i></div>
+            <div style="display:flex;justify-content:space-between;font-size:.8rem"><span class="muted num">Готово на ${pr}%</span>${editBtn("plans", p.id)}</div>
+          </article>`; }).join("") || '<div class="empty">Пусто</div>'}</div></div>`;
+      }).join("")}</div>
+    </div>`;
+}
+
+/* ---------- Формы ---------- */
+const genOpts = Object.entries(GEN).map(([v, l]) => ({ v, l: v + " — " + l }));
+const SCHEMA = {
+  family: { title: "Название семьи", fields: [
+    { k: "name", l: "Название семьи", req: 1, w: 1 }, { k: "motto", l: "Девиз (подзаголовок)", w: 1 }, { k: "story", l: "Вступление о семье", t: "textarea", w: 1 } ] },
+  members: { title: "Член семьи", warn: "Не храните здесь номера документов, банковских карт и счетов.", fields: [
+    { k: "name", l: "Имя", req: 1, w: 1 }, { k: "relation", l: "Кем приходится" },
+    { k: "generation", l: "Поколение", t: "select", opts: genOpts, num: 1 },
+    { k: "line", l: "Линия", t: "select", opts: LINES }, { k: "birthPlace", l: "Место рождения" },
+    { k: "birthDate", l: "Дата рождения", ph: "ГГГГ-ММ-ДД или ГГГГ", date: 1 }, { k: "deathDate", l: "Дата смерти", ph: "ГГГГ-ММ-ДД или ГГГГ", date: 1 },
+    { k: "occupation", l: "Занятие", w: 1 }, { k: "phone", l: "Телефон", t: "tel" }, { k: "email", l: "Эл. почта", t: "email" },
+    { k: "notes", l: "Заметки", t: "textarea", w: 1 } ] },
+  events: { title: "Событие", fields: [
+    { k: "year", l: "Год", req: 1, t: "number", int: 1 }, { k: "title", l: "Что произошло", req: 1 }, { k: "text", l: "Подробности", t: "textarea", w: 1 } ] },
+  tx: { title: "Операция", fields: [
+    { k: "date", l: "Дата", req: 1, t: "date" }, { k: "type", l: "Тип", req: 1, t: "select", opts: ["Доход", "Расход"] },
+    { k: "category", l: "Категория", req: 1, t: "select", opts: EXP_CATS }, { k: "amount", l: "Сумма, ₸", req: 1, t: "number", pos: 1 },
+    { k: "who", l: "Кто" }, { k: "note", l: "Комментарий" } ] },
+  assets: { title: "Имущество", fields: [
+    { k: "name", l: "Название", req: 1, w: 1 }, { k: "kind", l: "Вид", req: 1, t: "select", opts: KINDS }, { k: "value", l: "Оценка, ₸", req: 1, t: "number", pos: 1 },
+    { k: "owner", l: "Владелец" }, { k: "note", l: "Примечание" } ] },
+  debts: { title: "Кредит", fields: [
+    { k: "name", l: "Название", req: 1 }, { k: "lender", l: "Кредитор" },
+    { k: "total", l: "Сумма кредита, ₸", req: 1, t: "number", pos: 1 }, { k: "balance", l: "Остаток, ₸", req: 1, t: "number", pos: 1 },
+    { k: "monthly", l: "Платёж в месяц, ₸", t: "number", pos: 1 }, { k: "rate", l: "Ставка, %", t: "number", pos: 1 },
+    { k: "endDate", l: "Дата погашения", t: "date" }, { k: "note", l: "Примечание" } ] },
+  plans: { title: "План", fields: [
+    { k: "title", l: "Название", req: 1, w: 1 }, { k: "area", l: "Направление", req: 1, t: "select", opts: AREAS },
+    { k: "status", l: "Статус", req: 1, t: "select", opts: STATUSES }, { k: "who", l: "Для кого" }, { k: "due", l: "Срок", t: "date" },
+    { k: "budget", l: "Бюджет, ₸", t: "number", pos: 1 }, { k: "progress", l: "Готовность, %", t: "number", pct: 1 },
+    { k: "note", l: "Подробности", t: "textarea", w: 1 } ] }
+};
+
+const dlg = $("#dlg"), body = $("#dlgBody");
+function openDlg(html) { body.innerHTML = html; if (!dlg.open) dlg.showModal(); }
+dlg.addEventListener("click", (e) => { if (e.target === dlg) dlg.close(); });
+
+function fieldHtml(f, val) {
+  const id = "f-" + f.k;
+  const v = val == null ? "" : val;
+  let input;
+  if (f.t === "select") {
+    const opts = f.opts.map((o) => typeof o === "string" ? { v: o, l: o } : o);
+    input = `<select id="${id}" name="${f.k}">${f.req ? "" : '<option value="">—</option>'}${opts.map((o) => `<option value="${esc(o.v)}"${String(o.v) === String(v) ? " selected" : ""}>${esc(o.l)}</option>`).join("")}</select>`;
+  } else if (f.t === "textarea") {
+    input = `<textarea id="${id}" name="${f.k}">${esc(v)}</textarea>`;
+  } else {
+    input = `<input id="${id}" name="${f.k}" type="${f.t || "text"}" value="${esc(v)}"${f.ph ? ` placeholder="${esc(f.ph)}"` : ""}${f.t === "number" ? ' inputmode="decimal" step="any"' : ""}>`;
+  }
+  return `<div class="field${f.w ? " wide" : ""}" data-k="${f.k}"><label for="${id}">${esc(f.l)}${f.req ? " *" : ""}</label>${input}<div class="err" hidden></div></div>`;
+}
+
+function openForm(col, id) {
+  if (!canEdit) return;
+  const sc = SCHEMA[col];
+  const rec = col === "family" ? db.family : (id ? db[col].find((r) => r.id === id) : null);
+  const init = rec || (col === "tx" ? { date: TODAY.toISOString().slice(0, 10), type: "Расход" } : col === "plans" ? { status: "Идея", area: area === "all" ? AREAS[0] : area, progress: 0 } : col === "members" ? { generation: 4, line: "общая" } : {});
+  const isNew = !rec;
+  openDlg(`<form id="recForm" novalidate>
+    <div class="dlg-head"><h3 id="dlgTitle">${isNew ? "Новая запись · " : ""}${esc(sc.title)}</h3><button class="x" type="button" data-close aria-label="Закрыть">×</button></div>
+    ${sc.warn ? `<div class="note-warn">${esc(sc.warn)}</div>` : ""}
+    <div class="fields" style="margin-top:14px">${sc.fields.map((f) => fieldHtml(f, init[f.k])).join("")}</div>
+    <div class="err" id="formErr" hidden style="margin-top:10px"></div>
+    <div class="dlg-foot" style="margin-top:16px">
+      ${!isNew && col !== "family" ? '<button class="btn danger" type="button" id="delBtn">Удалить</button>' : ""}
+      <div class="right"><button class="btn" type="button" data-close>Отмена</button><button class="btn primary" type="submit">Сохранить</button></div>
+    </div>
+  </form>`);
+
+  const form = $("#recForm");
+  if (col === "tx") {
+    const typeSel = $("#f-type"), catSel = $("#f-category");
+    const fill = () => {
+      const cats = typeSel.value === "Доход" ? INC_CATS : EXP_CATS;
+      const cur = catSel.value;
+      catSel.innerHTML = cats.map((c) => `<option${c === cur ? " selected" : ""}>${esc(c)}</option>`).join("");
+    };
+    if (init.category) { catSel.innerHTML = `<option selected>${esc(init.category)}</option>`; }
+    fill();
+    typeSel.addEventListener("change", fill);
+  }
+  const del = $("#delBtn");
+  if (del) del.addEventListener("click", () => {
+    if (!del.classList.contains("armed")) { del.classList.add("armed"); del.textContent = "Точно удалить?"; return; }
+    db[col] = db[col].filter((r) => r.id !== id); save(); dlg.close(); render();
+  });
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const out = {}; let ok = true;
+    sc.fields.forEach((f) => {
+      const box = form.querySelector(`.field[data-k="${f.k}"]`), err = box.querySelector(".err");
+      let v = form.elements[f.k].value.trim(), msg = "";
+      if (f.req && v === "") msg = "Заполните это поле.";
+      else if (v !== "" && f.t === "number") {
+        const n = Number(v.replace(",", ".").replace(/\s/g, ""));
+        if (!isFinite(n)) msg = "Введите число.";
+        else if (f.int && !Number.isInteger(n)) msg = "Введите год целым числом.";
+        else if (f.pos && n < 0) msg = "Число не может быть отрицательным.";
+        else if (f.pct && (n < 0 || n > 100)) msg = "Введите число от 0 до 100.";
+        else v = n;
+      } else if (v !== "" && f.date && !parseD(v)) msg = "Формат: ГГГГ-ММ-ДД или ГГГГ.";
+      else if (v !== "" && f.num) v = Number(v);
+      box.classList.toggle("bad", !!msg); err.hidden = !msg; err.textContent = msg;
+      if (msg) ok = false;
+      out[f.k] = v;
+    });
+    if (col === "debts" && ok && out.balance > out.total) {
+      const box = form.querySelector('.field[data-k="balance"]'); box.classList.add("bad");
+      box.querySelector(".err").hidden = false; box.querySelector(".err").textContent = "Остаток больше суммы кредита."; ok = false;
+    }
+    if (!ok) return;
+    if (col === "family") { db.family = Object.assign({}, out); }
+    else if (rec) { const i = db[col].findIndex((r) => r.id === id); const n = Object.assign({ id }, out); db[col][i] = n; }
+    else {
+      if (docCount() >= MAX_DOCS) { const fe = $("#formErr"); fe.hidden = false; fe.textContent = "База заполнена: в ней уже 5 000 записей. Удалите ненужные, чтобы добавить новую."; return; }
+      db[col].push(Object.assign({ id: uid() }, out));
+    }
+    if (col === "tx") month = ym(out.date);
+    save(); dlg.close(); render();
+  });
+}
+
+function openPerson(id) {
+  const m = db.members.find((r) => r.id === id); if (!m) return;
+  const rows = [
+    ["Кем приходится", m.relation], ["Поколение", GEN[m.generation]], ["Линия", m.line],
+    ["Дата рождения", fmtD(m.birthDate)], ["Дата смерти", fmtD(m.deathDate)], ["Возраст", lifeText(m)],
+    ["Место рождения", m.birthPlace], ["Занятие", m.occupation], ["Телефон", m.phone], ["Эл. почта", m.email], ["Заметки", m.notes]
+  ].filter(([, v]) => v);
+  openDlg(`<div class="dlg-head"><div class="card-hero"><span class="avatar" aria-hidden="true">${esc(initials(m.name))}</span><div><h3 id="dlgTitle">${esc(m.name)}</h3>${m.example ? '<span class="tag ex">пример</span>' : ""}</div></div><button class="x" type="button" data-close aria-label="Закрыть">×</button></div>
+    <dl class="info">${rows.map(([k, v]) => `<dt>${k}</dt><dd>${esc(v)}</dd>`).join("")}</dl>
+    <div class="dlg-foot"><div class="right"><button class="btn" type="button" data-close>Закрыть</button>${canEdit ? `<button class="btn primary" type="button" data-edit="members" data-id="${esc(m.id)}">Изменить</button>` : ""}</div></div>`);
+}
+
+/* ---------- События ---------- */
+document.addEventListener("click", (e) => {
+  const t = e.target.closest("[data-edit],[data-add],[data-person],[data-close],[data-area],[data-tab]");
+  if (!t) return;
+  if (t.dataset.close !== undefined) dlg.close();
+  else if (t.dataset.tab) { tab = t.dataset.tab; pref("tab", tab); try { history.replaceState(null, "", "#" + tab); } catch (err) {} render(); }
+  else if (t.dataset.area) { area = t.dataset.area; render(); }
+  else if (t.dataset.add) openForm(t.dataset.add);
+  else if (t.dataset.edit) openForm(t.dataset.edit, t.dataset.id);
+  else if (t.dataset.person) openPerson(t.dataset.person);
+});
+document.addEventListener("keydown", (e) => {
+  if ((e.key === "Enter" || e.key === " ") && e.target.matches("tr[data-person]")) { e.preventDefault(); openPerson(e.target.dataset.person); }
+});
+window.addEventListener("hashchange", () => { const h = location.hash.slice(1); if (TABS.includes(h)) { tab = h; render(); } });
+$("#editFamily").addEventListener("click", () => openForm("family", "main"));
+$("#toggleMode").addEventListener("click", () => { canEdit = !canEdit; pref("mode", canEdit ? "edit" : "view"); render(); });
+const resetBtn = $("#resetDemo");
+resetBtn.addEventListener("click", () => {
+  if (!resetBtn.dataset.armed) { resetBtn.dataset.armed = "1"; resetBtn.textContent = "Все ваши записи заменятся демо-данными. Нажмите ещё раз"; return; }
+  delete resetBtn.dataset.armed; resetBtn.textContent = "Вернуть демо-данные";
+  db = seed(); save(); month = null; render();
+});
+
+function render() {
+  renderHeader();
+  renderHistory();
+  renderAssets();
+  renderPlans();
+}
+render();
+})();
+</script>
+</body>
+</html>
